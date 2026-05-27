@@ -11,16 +11,33 @@ const dashboardRoutes = require("./routes/dashboard");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS - allow all origins (or restrict to your frontend URL)
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type"]
-}));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://apple-indya-mobiles-72.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.options("*", cors());
+
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
+mongoose
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ MongoDB Atlas connected"))
   .catch((err) => {
     console.error("❌ MongoDB connection error:", err.message);
@@ -39,7 +56,7 @@ app.get("/api/health", (req, res) => {
     status: "ok",
     store: "APPLE INDYA MOBILES",
     db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-    timestamp: new Date()
+    timestamp: new Date(),
   });
 });
 
