@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-// Set REACT_APP_API_URL in your .env file for production
-// e.g. REACT_APP_API_URL=https://apple-indya-backend.up.railway.app
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const BASE_URL = "https://apple-indya-mobiles.onrender.com";
 
-const API = axios.create({ baseURL: `${BASE_URL}/api` });
+const API = axios.create({
+  baseURL: `${BASE_URL}/api`,
+});
 
 export const inventoryAPI = {
   getAll: (params) => API.get('/inventory', { params }),
