@@ -11,6 +11,7 @@ const inventorySchema = new mongoose.Schema({
   minStock: { type: Number, default: 3 },
   image: { type: String, default: "📦" },
   specs: { type: String, default: "" },
+  code: { type: String, default: "" },
 }, { timestamps: true });
 
 // ── Bill Schema ────────────────────────────────────────────
