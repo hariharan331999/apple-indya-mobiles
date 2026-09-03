@@ -33,22 +33,31 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // Generate bill
+    // Generate bill with compulsory 18% inclusive GST for Mobiles, and optional GST for other categories
     const rawSubtotal = resolvedItems.reduce((s, i) => s + i.price * i.qty, 0);
     const discountAmt = discount ? Math.round((rawSubtotal * discount) / 100) : 0;
     const finalPayable = Math.max(0, rawSubtotal - discountAmt);
+    const discountRatio = rawSubtotal > 0 ? (finalPayable / rawSubtotal) : 1;
 
-    let taxableSubtotal = rawSubtotal;
-    let gstAmt = 0;
-    let gstRate = 0;
+    let totalTaxable = 0;
+    let totalGSTAmt = 0;
 
-    if (includeGST) {
-      // 18% GST Inclusive calculation (e.g. ₹20,000 => base ₹16,949 + 18% GST ₹3,051)
-      taxableSubtotal = Math.round(finalPayable / 1.18);
-      gstAmt = finalPayable - taxableSubtotal;
-      gstRate = 18;
+    for (const item of resolvedItems) {
+      const itemNet = (item.price * item.qty) * discountRatio;
+      const isMobile = item.category === 'mobiles';
+      // Mobiles ALWAYS have 18% inclusive GST. Other items have GST only if includeGST is true.
+      if (isMobile || includeGST) {
+        const itemTaxable = Math.round(itemNet / 1.18);
+        const itemGST = itemNet - itemTaxable;
+        totalTaxable += itemTaxable;
+        totalGSTAmt += itemGST;
+      } else {
+        totalTaxable += itemNet;
+      }
     }
 
+    const taxableSubtotal = Math.round(totalTaxable);
+    const gstAmt = Math.round(totalGSTAmt);
     const grandTotal = finalPayable;
     const billId = `BILL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -59,7 +68,7 @@ router.post("/", async (req, res) => {
       customerPhone: customerPhone || "",
       customerEmail: customerEmail || "",
       customerGSTIN: customerGSTIN || "",
-      includeGST: !!includeGST,
+      includeGST: !!includeGST || resolvedItems.some(i => i.category === 'mobiles'),
       items: resolvedItems.map((i) => ({
         id: i.id, name: i.name, brand: i.brand,
         category: i.category, quantity: i.qty,
