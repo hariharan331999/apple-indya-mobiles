@@ -43,6 +43,8 @@ const billSchema = new mongoose.Schema({
   storeAddress: String,
   storePhone: String,
   storeGST: String,
+  customerGSTIN: { type: String, default: "" },
+  includeGST: { type: Boolean, default: false },
 });
 
 // ── Transaction Schema ─────────────────────────────────────

@@ -6,7 +6,7 @@ const { InventoryItem, Bill, Transaction } = require("../models");
 // POST process a sale
 router.post("/", async (req, res) => {
   try {
-    const { customerName, customerPhone, customerEmail, items, paymentMethod, discount } = req.body;
+    const { customerName, customerPhone, customerEmail, customerGSTIN, items, paymentMethod, discount, includeGST } = req.body;
 
     if (!customerName || !items || items.length === 0) {
       return res.status(400).json({ error: "Customer name and items are required" });
@@ -34,10 +34,22 @@ router.post("/", async (req, res) => {
     }
 
     // Generate bill
-    const subtotal = resolvedItems.reduce((s, i) => s + i.price * i.qty, 0);
-    const discountAmt = discount ? Math.round((subtotal * discount) / 100) : 0;
-    const gstAmt = Math.round((subtotal - discountAmt) * 0.18);
-    const grandTotal = subtotal - discountAmt + gstAmt;
+    const rawSubtotal = resolvedItems.reduce((s, i) => s + i.price * i.qty, 0);
+    const discountAmt = discount ? Math.round((rawSubtotal * discount) / 100) : 0;
+    const finalPayable = Math.max(0, rawSubtotal - discountAmt);
+
+    let taxableSubtotal = rawSubtotal;
+    let gstAmt = 0;
+    let gstRate = 0;
+
+    if (includeGST) {
+      // 18% GST Inclusive calculation (e.g. ₹20,000 => base ₹16,949 + 18% GST ₹3,051)
+      taxableSubtotal = Math.round(finalPayable / 1.18);
+      gstAmt = finalPayable - taxableSubtotal;
+      gstRate = 18;
+    }
+
+    const grandTotal = finalPayable;
     const billId = `BILL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const bill = await Bill.create({
@@ -46,15 +58,19 @@ router.post("/", async (req, res) => {
       customerName,
       customerPhone: customerPhone || "",
       customerEmail: customerEmail || "",
+      customerGSTIN: customerGSTIN || "",
+      includeGST: !!includeGST,
       items: resolvedItems.map((i) => ({
         id: i.id, name: i.name, brand: i.brand,
         category: i.category, quantity: i.qty,
         unitPrice: i.price, total: i.price * i.qty,
       })),
-      subtotal,
+      subtotal: taxableSubtotal,
       discount: discount || 0,
       discountAmount: discountAmt,
-      gst: 18, gstAmount: gstAmt, grandTotal,
+      gst: gstRate,
+      gstAmount: gstAmt,
+      grandTotal,
       paymentMethod: paymentMethod || "cash",
       status: "completed",
       storeName: "APPLE INDYA MOBILES",
