@@ -192,6 +192,44 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+router.put("/:id/cancel", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = {
+      $or: [{ id: id }, { billNumber: id }]
+    };
+    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: id });
+    }
+    const bill = await Bill.findOne(query);
+    if (!bill) return res.status(404).json({ error: "Bill not found" });
+
+    if (bill.status === "cancelled") {
+      return res.status(400).json({ error: "Bill is already cancelled" });
+    }
+
+    bill.status = "cancelled";
+    await bill.save();
+
+    // Restore stock in Inventory
+    const { InventoryItem } = require("../models");
+    if (bill.items && bill.items.length > 0) {
+      for (const it of bill.items) {
+        if (it.category !== "services") {
+          await InventoryItem.findOneAndUpdate(
+            { $or: [{ id: it.id }, { name: it.name }] },
+            { $inc: { stock: it.quantity } }
+          ).catch(() => {});
+        }
+      }
+    }
+
+    res.json({ message: "Bill cancelled and products returned to inventory", bill });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
     const bill = await Bill.findOneAndDelete({
