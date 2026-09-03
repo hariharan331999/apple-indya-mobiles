@@ -68,9 +68,17 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Invalid category" });
     }
 
-    // Generate ID
-    const count = await InventoryItem.countDocuments({ category });
-    const newId = `${PREFIX[category]}${String(count + 1).padStart(3, "0")}`;
+    // Generate ID safely by finding highest existing number
+    const itemsInCat = await InventoryItem.find({ category }).select("id");
+    let maxNum = 0;
+    const prefix = PREFIX[category];
+    for (const it of itemsInCat) {
+      if (it.id && it.id.startsWith(prefix)) {
+        const num = parseInt(it.id.replace(prefix, ""), 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    }
+    const newId = `${prefix}${String(maxNum + 1).padStart(3, "0")}`;
 
     const newItem = await InventoryItem.create({
       id: newId, name, brand, category,

@@ -21,4 +21,16 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+router.delete("/:id", async (req, res) => {
+  try {
+    const bill = await Bill.findOneAndDelete({
+      $or: [{ id: req.params.id }, { billNumber: req.params.id }]
+    });
+    if (!bill) return res.status(404).json({ error: "Bill not found" });
+    res.json({ message: "Bill deleted successfully", id: req.params.id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
