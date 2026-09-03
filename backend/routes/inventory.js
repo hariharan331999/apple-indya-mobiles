@@ -106,9 +106,13 @@ router.post("/", async (req, res) => {
 // PUT update product
 router.put("/:id", async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    if (updateData.category && EMOJI[updateData.category]) {
+      updateData.image = EMOJI[updateData.category];
+    }
     const item = await InventoryItem.findOneAndUpdate(
       { id: req.params.id },
-      { $set: req.body },
+      { $set: updateData },
       { new: true }
     );
     if (!item) return res.status(404).json({ error: "Item not found" });
