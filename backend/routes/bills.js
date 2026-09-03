@@ -11,28 +11,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
-  try {
-    const bill = await Bill.findOne({ id: req.params.id });
-    if (!bill) return res.status(404).json({ error: "Bill not found" });
-    res.json(bill);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-router.delete("/:id", async (req, res) => {
-  try {
-    const bill = await Bill.findOneAndDelete({
-      $or: [{ id: req.params.id }, { billNumber: req.params.id }]
-    });
-    if (!bill) return res.status(404).json({ error: "Bill not found" });
-    res.json({ message: "Bill deleted successfully", id: req.params.id });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 router.get("/view/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -42,7 +20,7 @@ router.get("/view/:id", async (req, res) => {
         { id: id },
       ]
     };
-    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
       query.$or.push({ _id: id });
     }
     const bill = await Bill.findOne(query);
@@ -202,4 +180,29 @@ router.get("/view/:id", async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  try {
+    const bill = await Bill.findOne({
+      $or: [{ id: req.params.id }, { billNumber: req.params.id }]
+    });
+    if (!bill) return res.status(404).json({ error: "Bill not found" });
+    res.json(bill);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const bill = await Bill.findOneAndDelete({
+      $or: [{ id: req.params.id }, { billNumber: req.params.id }]
+    });
+    if (!bill) return res.status(404).json({ error: "Bill not found" });
+    res.json({ message: "Bill deleted successfully", id: req.params.id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
+
