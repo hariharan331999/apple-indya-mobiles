@@ -42,12 +42,20 @@ router.post("/", async (req, res) => {
     let totalTaxable = 0;
     let totalGSTAmt = 0;
 
+    const otherRate = Number(otherGSTPercent) || (includeGST ? 18 : 0);
+
     for (const item of resolvedItems) {
       const itemNet = (item.price * item.qty) * discountRatio;
       const isMobile = item.category === 'mobiles';
-      // Mobiles ALWAYS have 18% inclusive GST. Other items have GST only if includeGST is true.
-      if (isMobile || includeGST) {
+      // Mobiles ALWAYS have 18% inclusive GST. Other items have GST based on otherRate.
+      if (isMobile) {
         const itemTaxable = Math.round(itemNet / 1.18);
+        const itemGST = itemNet - itemTaxable;
+        totalTaxable += itemTaxable;
+        totalGSTAmt += itemGST;
+      } else if (otherRate > 0) {
+        const divisor = 1 + (otherRate / 100);
+        const itemTaxable = Math.round(itemNet / divisor);
         const itemGST = itemNet - itemTaxable;
         totalTaxable += itemTaxable;
         totalGSTAmt += itemGST;
@@ -68,16 +76,17 @@ router.post("/", async (req, res) => {
       customerPhone: customerPhone || "",
       customerEmail: customerEmail || "",
       customerGSTIN: customerGSTIN || "",
-      includeGST: !!includeGST || resolvedItems.some(i => i.category === 'mobiles'),
+      includeGST: gstAmt > 0,
       items: resolvedItems.map((i) => ({
         id: i.id, name: i.name, brand: i.brand,
         category: i.category, quantity: i.qty,
         unitPrice: i.price, total: i.price * i.qty,
       })),
-      subtotal: taxableSubtotal,
+      subtotal: rawSubtotal,
+      taxableSubtotal: taxableSubtotal,
       discount: discount || 0,
       discountAmount: discountAmt,
-      gst: gstRate,
+      gst: gstAmt > 0 ? 18 : 0,
       gstAmount: gstAmt,
       grandTotal,
       paymentMethod: paymentMethod || "cash",
