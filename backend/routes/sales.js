@@ -6,7 +6,7 @@ const { InventoryItem, Bill, Transaction } = require("../models");
 // POST process a sale
 router.post("/", async (req, res) => {
   try {
-    const { customerName, customerPhone, customerEmail, customerGSTIN, items, paymentMethod, discount, includeGST } = req.body;
+    const { customerName, customerPhone, customerEmail, customerGSTIN, items, paymentMethod, discount, includeGST, otherGSTPercent } = req.body;
 
     if (!customerName || !items || items.length === 0) {
       return res.status(400).json({ error: "Customer name and items are required" });
