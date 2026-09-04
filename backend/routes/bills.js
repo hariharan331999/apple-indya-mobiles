@@ -230,13 +230,85 @@ router.put("/:id/cancel", async (req, res) => {
   }
 });
 
+// POST /reset-revenue: Wipe all bills and sales transactions from MongoDB
+router.post("/reset-revenue", async (req, res) => {
+  try {
+    const { Transaction } = require("../models");
+    const billResult = await Bill.deleteMany({});
+    const txResult = await Transaction.deleteMany({ type: "sale" });
+    res.json({
+      message: "Total revenue and all bills reset to ₹0 in database successfully",
+      deletedBills: billResult.deletedCount,
+      deletedTransactions: txResult.deletedCount,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /reset-revenue (support DELETE method as well)
+router.delete("/reset-revenue", async (req, res) => {
+  try {
+    const { Transaction } = require("../models");
+    const billResult = await Bill.deleteMany({});
+    const txResult = await Transaction.deleteMany({ type: "sale" });
+    res.json({
+      message: "Total revenue and all bills reset to ₹0 in database successfully",
+      deletedBills: billResult.deletedCount,
+      deletedTransactions: txResult.deletedCount,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /bulk-delete: Delete an array of bills by id/billNumber/_id
+router.post("/bulk-delete", async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "ids array is required" });
+    }
+    const { Transaction } = require("../models");
+    const objectIds = ids.filter((id) => typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/));
+    const filter = {
+      $or: [
+        { id: { $in: ids } },
+        { billNumber: { $in: ids } },
+        { _id: { $in: objectIds } },
+      ],
+    };
+    const billResult = await Bill.deleteMany(filter);
+    await Transaction.deleteMany({
+      $or: [{ billId: { $in: ids } }, { billNumber: { $in: ids } }],
+    }).catch(() => {});
+    res.json({
+      message: "Deleted " + billResult.deletedCount + " bills from database successfully",
+      deletedCount: billResult.deletedCount,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
-    const bill = await Bill.findOneAndDelete({
-      $or: [{ id: req.params.id }, { billNumber: req.params.id }]
-    });
+    const id = req.params.id;
+    const query = {
+      $or: [{ id: id }, { billNumber: id }]
+    };
+    if (id && typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: id });
+    }
+    const bill = await Bill.findOneAndDelete(query);
     if (!bill) return res.status(404).json({ error: "Bill not found" });
-    res.json({ message: "Bill deleted successfully", id: req.params.id });
+
+    const { Transaction } = require("../models");
+    await Transaction.deleteMany({
+      $or: [{ billId: bill.id }, { billId: bill.billNumber }]
+    }).catch(() => {});
+
+    res.json({ message: "Bill deleted successfully from database", id: req.params.id });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
