@@ -160,9 +160,16 @@ router.get("/view/:id", async (req, res) => {
       </div>
 
       <div class="terms">
-        <p><strong>Thank you for choosing Apple Indya Mobiles! ✨</strong></p>
-        <p>1. Goods once sold will not be taken back or exchanged.</p>
-        <p>2. Warranty as per manufacturer terms. For queries, call 99441 70066.</p>
+        <p style="font-weight:700;font-size:13px;color:#1d1d1f;margin-bottom:8px;">Thank You for Visiting Apple Indya Mobiles! ✨</p>
+        ${hasMobile ? `
+          <p>1. இங்கு வாங்கும் அனைத்து மொபைல்களுக்கும் ஒரு வருட வாரண்டி உண்டு.</p>
+          <p>2. வாரண்டியில் உள்ள மொபைல்களுக்கு அந்தந்த கம்பெனி சர்வீஸ் சென்டரில் சர்வீஸ் செய்து கொள்ளலாம்.</p>
+          <p>3. தண்ணீர் பட்டாலோ சேதம் அடைந்தாலோ வாரண்டி பெற இயலாது.</p>
+          <p>4. எக்காரணம் கொண்டு மொபைலை மாற்றித்தர இயலாது.</p>
+          <p style="color:#8b1836;font-weight:700;">5. பேட்டரி சார்ஜர்களுக்கு ஆறுமாத வாரண்டி மட்டுமே.</p>
+        ` : `
+          <p style="color:#8b1836;font-weight:700;font-size:12px;">• பேட்டரி சார்ஜர்களுக்கு ஆறுமாத வாரண்டி மட்டுமே.</p>
+        `}
       </div>
     </div>
 
