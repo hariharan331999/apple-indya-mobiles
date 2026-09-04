@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
           error: `Insufficient stock for ${found.name}. Available: ${found.stock}`,
         });
       }
-      resolvedItems.push({ ...found.toObject(), qty: saleItem.quantity });
+      resolvedItems.push({ ...found.toObject(), qty: saleItem.quantity, imei: saleItem.imei ? String(saleItem.imei).trim() : '' });
     }
 
     // Deduct stock
@@ -78,9 +78,13 @@ router.post("/", async (req, res) => {
       customerGSTIN: customerGSTIN || "",
       includeGST: gstAmt > 0,
       items: resolvedItems.map((i) => ({
-        id: i.id, name: i.name, brand: i.brand,
-        category: i.category, quantity: i.qty,
-        unitPrice: i.price, total: i.price * i.qty,
+        id: i.id,
+        name: i.imei ? `${i.name} [IMEI: ${i.imei}]` : i.name,
+        brand: i.brand,
+        category: i.category,
+        quantity: i.qty,
+        unitPrice: i.price,
+        total: i.price * i.qty,
       })),
       subtotal: rawSubtotal,
       taxableSubtotal: taxableSubtotal,
