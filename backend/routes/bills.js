@@ -199,6 +199,67 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// PUT /:id - Edit / Update existing bill
+router.put("/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = {
+      $or: [{ id: id }, { billNumber: id }]
+    };
+    if (id && typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: id });
+    }
+
+    const bill = await Bill.findOne(query);
+    if (!bill) return res.status(404).json({ error: "Bill not found" });
+
+    // Allowed updatable fields
+    const fields = [
+      'customerName',
+      'customerPhone',
+      'customerEmail',
+      'customerGSTIN',
+      'paymentMethod',
+      'items',
+      'subtotal',
+      'discount',
+      'discountAmount',
+      'gst',
+      'gstAmount',
+      'grandTotal',
+      'includeGST',
+      'status',
+      'paidAmount',
+      'receivedAmount',
+      'balanceAmount',
+    ];
+
+    fields.forEach((f) => {
+      if (req.body[f] !== undefined) {
+        bill[f] = req.body[f];
+      }
+    });
+
+    await bill.save();
+
+    // Also update associated Transaction records if present
+    const { Transaction } = require("../models");
+    await Transaction.updateMany(
+      { $or: [{ billId: bill.id }, { billId: bill.billNumber }] },
+      {
+        $set: {
+          customerName: bill.customerName,
+          total: bill.grandTotal,
+        }
+      }
+    ).catch(() => {});
+
+    res.json({ message: "Bill updated successfully in database", bill });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.put("/:id/cancel", async (req, res) => {
   try {
     const id = req.params.id;
