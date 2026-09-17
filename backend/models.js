@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-// ── Inventory Item Schema ──────────────────────────────────
+// Inventory Item Schema
 const inventorySchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
@@ -14,7 +14,7 @@ const inventorySchema = new mongoose.Schema({
   code: { type: String, default: "" },
 }, { timestamps: true });
 
-// ── Bill Schema ────────────────────────────────────────────
+// Bill Schema
 const billSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   billNumber: String,
@@ -47,7 +47,7 @@ const billSchema = new mongoose.Schema({
   includeGST: { type: Boolean, default: false },
 });
 
-// ── Transaction Schema ─────────────────────────────────────
+// Transaction Schema
 const transactionSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   type: { type: String, enum: ["sale", "restock", "stock_added"] },
@@ -63,8 +63,47 @@ const transactionSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
 });
 
+// Supplier Purchase / Due Schema
+const supplierPurchaseSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  supplierName: { type: String, required: true },
+  phone: { type: String, default: "" },
+  description: { type: String, default: "" },
+  invoiceRef: { type: String, default: "" },
+  totalAmount: { type: Number, required: true },
+  paidAmount: { type: Number, default: 0 },
+  balanceAmount: { type: Number, default: 0 },
+  status: { type: String, default: "pending" },
+  date: { type: String, default: () => new Date().toISOString().split("T")[0] },
+  notes: { type: String, default: "" },
+  payments: [
+    {
+      id: String,
+      amount: Number,
+      date: String,
+      mode: { type: String, default: "Cash" },
+      note: String,
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
+}, { timestamps: true });
+
+// Revenue Split Schema
+const revenueSplitSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  date: { type: String, required: true },
+  revenueSource: { type: String, default: "today_profit" },
+  baseAmount: { type: Number, required: true },
+  supplierPaid: { type: Number, default: 0 },
+  shopBuffer: { type: Number, default: 500 },
+  homeAmount: { type: Number, required: true },
+  notes: { type: String, default: "" },
+}, { timestamps: true });
+
 const InventoryItem = mongoose.model("InventoryItem", inventorySchema);
 const Bill = mongoose.model("Bill", billSchema);
 const Transaction = mongoose.model("Transaction", transactionSchema);
+const SupplierPurchase = mongoose.model("SupplierPurchase", supplierPurchaseSchema);
+const RevenueSplit = mongoose.model("RevenueSplit", revenueSplitSchema);
 
-module.exports = { InventoryItem, Bill, Transaction };
+module.exports = { InventoryItem, Bill, Transaction, SupplierPurchase, RevenueSplit };

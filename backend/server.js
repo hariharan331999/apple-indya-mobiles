@@ -7,6 +7,8 @@ const inventoryRoutes = require("./routes/inventory");
 const salesRoutes = require("./routes/sales");
 const billsRoutes = require("./routes/bills");
 const dashboardRoutes = require("./routes/dashboard");
+const supplierRoutes = require("./routes/suppliers");
+const revenueSplitRoutes = require("./routes/revenueSplits");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -55,6 +57,8 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/bills", billsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/suppliers", supplierRoutes);
+app.use("/api/revenue-splits", revenueSplitRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
